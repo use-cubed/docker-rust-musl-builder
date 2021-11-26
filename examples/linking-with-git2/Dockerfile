@@ -10,4 +10,4 @@ FROM ekidd/rust-musl-builder AS builder
 ADD --chown=rust:rust . ./
 
 # Build our application.
-RUN cargo build
+RUN cargo +nightly build

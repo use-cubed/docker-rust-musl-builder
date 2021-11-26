@@ -3,26 +3,26 @@ name: Docker push
 on:
   push:
     branches:
-    - master
+      - mainline
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: "30 22 * * *"
 
 jobs:
   build_and_push:
     runs-on: ubuntu-18.04
     steps:
-    - uses: actions/checkout@v2
-    - name: Build & Push latest version
-      run: |
-        set -eu
-        DOCKER_USER=nwtgck
-        export DOCKER_REPO=${DOCKER_USER}/rust-musl-builder
+      - uses: actions/checkout@v2
+      - name: Build & Push latest version
+        run: |
+          set -eu
+          DOCKER_USER=ncb000gt
+          export DOCKER_REPO=${DOCKER_USER}/rust-musl-builder
 
-        docker build -t ${DOCKER_REPO}:latest .
-        RUST_VERSION=$(docker run --rm ${DOCKER_REPO}:latest rustc -vV | grep "release: " | cut -c 10-)
-        echo "Rust version: ${RUST_VERSION}"
-        docker tag ${DOCKER_REPO}:latest ${DOCKER_REPO}:${RUST_VERSION}
+          docker build -t ${DOCKER_REPO}:latest .
+          DAY="nightly-$(date "+%Y%m%d")"
+          echo "Nightly Deploy: ${DAY}"
+          docker tag ${DOCKER_REPO}:latest ${DOCKER_REPO}:${DAY}
 
-        echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${DOCKER_USER} --password-stdin
-        docker push ${DOCKER_REPO}:${RUST_VERSION}
-        docker push ${DOCKER_REPO}:latest
+          echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${DOCKER_USER} --password-stdin
+          docker push ${DOCKER_REPO}:-${DAY}
+          docker push ${DOCKER_REPO}:latest

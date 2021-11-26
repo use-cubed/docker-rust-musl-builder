@@ -39,22 +39,22 @@ ARG POSTGRESQL_VERSION=11.11
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -yq \
-        build-essential \
-        cmake \
-        curl \
-        file \
-        git \
-        graphviz \
-        musl-dev \
-        musl-tools \
-        libpq-dev \
-        libsqlite-dev \
-        libssl-dev \
-        linux-libc-dev \
-        pkgconf \
-        sudo \
-        xutils-dev \
-        && \
+    build-essential \
+    cmake \
+    curl \
+    file \
+    git \
+    graphviz \
+    musl-dev \
+    musl-tools \
+    libpq-dev \
+    libsqlite-dev \
+    libssl-dev \
+    linux-libc-dev \
+    pkgconf \
+    sudo \
+    xutils-dev \
+    && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     useradd rust --user-group --create-home --shell /bin/bash --groups sudo && \
     curl -fLO https://github.com/rust-lang-nursery/mdBook/releases/download/v$MDBOOK_VERSION/mdbook-v$MDBOOK_VERSION-x86_64-unknown-linux-gnu.tar.gz && \
@@ -89,7 +89,7 @@ RUN echo "Building OpenSSL" && \
     cd /tmp && \
     short_version="$(echo "$OPENSSL_VERSION" | sed s'/[a-z]$//' )" && \
     curl -fLO "https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz" || \
-        curl -fLO "https://www.openssl.org/source/old/$short_version/openssl-$OPENSSL_VERSION.tar.gz" && \
+    curl -fLO "https://www.openssl.org/source/old/$short_version/openssl-$OPENSSL_VERSION.tar.gz" && \
     tar xvzf "openssl-$OPENSSL_VERSION.tar.gz" && cd "openssl-$OPENSSL_VERSION" && \
     env CC=musl-gcc ./Configure no-shared no-zlib -fPIC --prefix=/usr/local/musl -DOPENSSL_NO_SECURE_MEMORY linux-x86_64 && \
     env C_INCLUDE_PATH=/usr/local/musl/include/ make depend && \
@@ -140,13 +140,13 @@ ENV RUSTUP_HOME=/opt/rust/rustup \
 # manually.
 RUN curl https://sh.rustup.rs -sSf | \
     env CARGO_HOME=/opt/rust/cargo \
-        sh -s -- -y --default-toolchain $TOOLCHAIN --profile minimal --no-modify-path && \
-    env CARGO_HOME=/opt/rust/cargo \
-        rustup component add rustfmt && \
-    env CARGO_HOME=/opt/rust/cargo \
-        rustup component add clippy && \
-    env CARGO_HOME=/opt/rust/cargo \
-        rustup target add x86_64-unknown-linux-musl
+    sh -s -- -y --default-toolchain $TOOLCHAIN --profile minimal --no-modify-path
+RUN env CARGO_HOME=/opt/rust/cargo rustup update nightly && \
+    env CARGO_HOME=/opt/rust/cargo rustup toolchain install nightly && \
+    env CARGO_HOME=/opt/rust/cargo rustup target add x86_64-unknown-linux-musl && \
+    env CARGO_HOME=/opt/rust/cargo rustup +nightly target add x86_64-unknown-linux-musl && \
+    env CARGO_HOME=/opt/rust/cargo rustup +nightly component add rustfmt && \
+    env CARGO_HOME=/opt/rust/cargo rustup +nightly component add clippy
 ADD cargo-config.toml /opt/rust/cargo/config
 
 # Set up our environment variables so that we cross-compile using musl-libc by
@@ -159,16 +159,6 @@ ENV X86_64_UNKNOWN_LINUX_MUSL_OPENSSL_DIR=/usr/local/musl/ \
     PKG_CONFIG_ALL_STATIC=true \
     LIBZ_SYS_STATIC=1 \
     TARGET=musl
-
-# Install some useful Rust tools from source. This will use the static linking
-# toolchain, but that should be OK.
-#
-# We include cargo-audit for compatibility with earlier versions of this image,
-# but cargo-deny provides a superset of cargo-audit's features.
-RUN env CARGO_HOME=/opt/rust/cargo cargo install -f cargo-audit && \
-    env CARGO_HOME=/opt/rust/cargo cargo install -f cargo-deb && \
-    env CARGO_HOME=/opt/rust/cargo cargo install -f mdbook-graphviz && \
-    rm -rf /opt/rust/cargo/registry/
 
 # Allow sudo without a password.
 ADD sudoers /etc/sudoers.d/nopasswd
